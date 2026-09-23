@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# LILA dataset
+player_data/
+
+# Generated analysis / processed data
+processed/
+data-output/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
