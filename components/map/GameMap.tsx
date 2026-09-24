@@ -40,18 +40,36 @@ export default function GameMap({
     });
 
     return (
-        <div className="relative aspect-square w-full max-w-[850px] overflow-hidden rounded-xl border border-zinc-800 bg-black shadow-2xl">
+        <div
+            className="
+                relative
+                aspect-square
+                h-full
+                w-auto
+                max-h-full
+                max-w-full
+                overflow-hidden
+                rounded-xl
+                border
+                border-zinc-800
+                bg-black
+                shadow-2xl
+            "
+        >
+            {/* Minimap */}
             <img
                 src={MAP_IMAGES[match.mapId]}
                 alt={`${MAP_NAMES[match.mapId] ?? match.mapId} minimap`}
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-contain"
             />
 
+            {/* Telemetry overlay */}
             <svg
                 viewBox="0 0 1024 1024"
                 className="absolute inset-0 h-full w-full"
                 preserveAspectRatio="none"
             >
+                {/* Player paths */}
                 {visiblePlayers.map((player) => {
                     const selected =
                         selectedPlayerId === null ||
@@ -67,6 +85,7 @@ export default function GameMap({
                     );
                 })}
 
+                {/* Player markers */}
                 {visiblePlayers.map((player) => {
                     const selected =
                         selectedPlayerId === null ||
@@ -82,6 +101,7 @@ export default function GameMap({
                     );
                 })}
 
+                {/* Events */}
                 {visiblePlayers.flatMap((player) => {
                     const selected =
                         selectedPlayerId === null ||

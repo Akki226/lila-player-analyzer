@@ -180,7 +180,7 @@ export default function PlayerAnalyzer() {
 
     if (loading) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-[#0b0d10] text-white">
+            <main className="flex h-screen items-center justify-center bg-[#0b0d10] text-white">
                 <div className="text-sm text-zinc-400">
                     Loading player data...
                 </div>
@@ -190,7 +190,7 @@ export default function PlayerAnalyzer() {
 
     if (error) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-[#0b0d10] px-6 text-white">
+            <main className="flex h-screen items-center justify-center bg-[#0b0d10] px-6 text-white">
                 <div className="max-w-lg rounded-xl border border-red-900 bg-red-950/30 p-6">
                     <h1 className="font-semibold text-red-300">
                         Failed to load data
@@ -206,7 +206,7 @@ export default function PlayerAnalyzer() {
 
     if (!selectedMatch || !selectedIndex) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-[#0b0d10] text-white">
+            <main className="flex h-screen items-center justify-center bg-[#0b0d10] text-white">
                 <div className="text-sm text-zinc-500">
                     No matches available.
                 </div>
@@ -215,9 +215,9 @@ export default function PlayerAnalyzer() {
     }
 
     return (
-        <main className="min-h-screen bg-[#0b0d10] text-white">
+        <main className="flex h-screen flex-col overflow-hidden bg-[#0b0d10] text-white">
             {/* Header */}
-            <header className="border-b border-zinc-800 px-6 py-4">
+            <header className="shrink-0 border-b border-zinc-800 px-6 py-4">
                 <div className="flex items-center justify-between gap-6">
                     <div>
                         <h1 className="text-xl font-semibold tracking-tight">
@@ -237,46 +237,56 @@ export default function PlayerAnalyzer() {
                 </div>
             </header>
 
-            {/* Main content */}
-            <div className="grid min-h-[calc(100vh-73px)] grid-cols-[minmax(0,1fr)_320px]">
-                {/* Map area */}
-                <section className="relative flex min-h-0 items-center justify-center p-6 pb-24">
-                    <GameMap
-                        match={selectedMatch}
-                        currentTime={currentTime}
-                        selectedPlayerId={selectedPlayerId}
-                        showHumans={showHumans}
-                        showBots={showBots}
-                        enabledEvents={enabledEvents}
-                    />
+            {/* Application workspace */}
+            <div className="grid min-h-0 flex-1 grid-cols-[320px_minmax(0,1fr)]">
+                {/* Left sidebar */}
+                <aside className="min-h-0 overflow-y-auto border-r border-zinc-800 bg-[#0e1014]">
+                    <div className="px-5 py-5 pr-4">
+                        <MatchSidebar
+                            match={selectedMatch}
+                            index={selectedIndex}
+                            selectedPlayerId={selectedPlayerId}
+                            showHumans={showHumans}
+                            showBots={showBots}
+                            enabledEvents={enabledEvents}
+                            onSelectPlayer={setSelectedPlayerId}
+                            onShowHumans={setShowHumans}
+                            onShowBots={setShowBots}
+                            onToggleEvent={handleToggleEvent}
+                        />
+                    </div>
+                </aside>
+
+                {/* Main visualization workspace */}
+                <section className="grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] bg-[#0b0d10]">
+                    {/* Map */}
+                    {/* Map */}
+                    <div className="min-h-0 min-w-0 overflow-hidden p-6">
+                        <div className="flex h-full w-full items-center justify-center ">
+                            <GameMap
+                                match={selectedMatch}
+                                currentTime={currentTime}
+                                selectedPlayerId={selectedPlayerId}
+                                showHumans={showHumans}
+                                showBots={showBots}
+                                enabledEvents={enabledEvents}
+                            />
+                        </div>
+                    </div>
 
                     {/* Timeline */}
-                    <div className="absolute bottom-0 left-0 right-0 border-t border-zinc-800 bg-[#0e1014] px-6 py-4">
+                    <div className="shrink-0 border-t border-zinc-800 bg-[#0e1014]">
                         <Timeline
+                            match={selectedMatch}
                             currentTime={currentTime}
-                            duration={selectedMatch.durationMs}
                             isPlaying={isPlaying}
-                            onSeek={handleSeek}
-                            onTogglePlayback={handleTogglePlayback}
+                            enabledEvents={enabledEvents}
+                            selectedPlayerId={selectedPlayerId}
+                            onTimeChange={handleSeek}
+                            onTogglePlay={handleTogglePlayback}
                         />
                     </div>
                 </section>
-
-                {/* Sidebar */}
-                <aside className="border-l border-zinc-800 bg-[#0e1014] p-5">
-                    <MatchSidebar
-                        match={selectedMatch}
-                        index={selectedIndex}
-                        selectedPlayerId={selectedPlayerId}
-                        showHumans={showHumans}
-                        showBots={showBots}
-                        enabledEvents={enabledEvents}
-                        onSelectPlayer={setSelectedPlayerId}
-                        onShowHumans={setShowHumans}
-                        onShowBots={setShowBots}
-                        onToggleEvent={handleToggleEvent}
-                    />
-                </aside>
             </div>
         </main>
     );
