@@ -6,6 +6,7 @@ import type {
     MatchIndexItem,
 } from "@/lib/types";
 
+import MatchInsights from "../analytics/MatchInsights";
 import PlayerDetails from "../analytics/PlayerDetails";
 import EventFilters from "./EventFilters";
 import MatchStats from "./MatchStats";
@@ -52,7 +53,7 @@ export default function MatchSidebar({
                 </div>
 
                 <MatchStats index={index} />
-
+                <MatchInsights match={match} />
                 <PlayerFilters
                     players={match.players}
                     selectedPlayerId={selectedPlayerId}
