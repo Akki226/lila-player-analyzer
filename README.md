@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LILA Player Analyzer
 
-## Getting Started
+A web-based telemetry visualization tool for exploring player journeys, movement patterns, events, and map activity from LILA BLACK gameplay data.
 
-First, run the development server:
+## Live Demo
+
+[https://lila-player-analyzer.vercel.app/](https://lila-player-analyzer.vercel.app/)
+
+## Features
+
+- Player journeys rendered on the correct minimap
+- Human and bot visualization
+- Kill, death, loot, and storm-death markers
+- Map, date, match, player, and event filtering
+- Timeline playback
+- Traffic, kill, and death heatmaps
+- Player and match-level insights
+
+## Tech Stack
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Python
+- Pandas / PyArrow
+- Apache Parquet
+- SVG
+- Vercel
+
+## Local Setup
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Run the Application
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the application at:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Production Build
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Data Preprocessing
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The supplied Parquet files are preprocessed using:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+python scripts/preprocess_data.py
+```
 
-## Deploy on Vercel
+This generates:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+processed/
+├── matches.json
+└── match_index.json
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Copy the generated files into `public/data/`:
+
+```bash
+cp processed/matches.json public/data/matches.json
+cp processed/match_index.json public/data/match_index.json
+```
+
+### Python Dependencies
+
+```bash
+pip install pandas pyarrow
+```
+
+## Environment Variables
+
+No environment variables are required.
+
+The application does not require a runtime backend, database, authentication service, or external API.
+
+## Documentation
+
+- **`ARCHITECTURE.md`** — architecture, data flow, coordinate mapping, assumptions, and tradeoffs
+- **`INSIGHTS.md`** — three gameplay observations derived from the supplied telemetry
+
+## Dataset Notes
+
+The supplied dataset contains five days of LILA BLACK gameplay telemetry and minimap assets for three maps.
+
+The application uses the supplied coordinate system and preserves the timestamp ordering from the source telemetry. See `ARCHITECTURE.md` for details on the timestamp ambiguity and other data assumptions.
+
+## Deployment
+
+The application is deployed on Vercel:
+
+[https://lila-player-analyzer.vercel.app/](https://lila-player-analyzer.vercel.app/)
