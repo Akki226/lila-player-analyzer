@@ -7,6 +7,7 @@ import type {
     Match,
 } from "@/lib/types";
 
+import { useEffect, useState } from "react";
 import EventMarker from "./EventMarker";
 import HeatmapOverlay from "./HeatmapOverlay";
 import PlayerMarker from "./PlayerMarker";
@@ -33,6 +34,14 @@ export default function GameMap({
     heatmapMode,
     onHeatmapModeChange,
 }: Props) {
+
+    const mapSrc = MAP_IMAGES[match.mapId];
+    const [isMapLoading, setIsMapLoading] = useState(true);
+
+    useEffect(() => {
+        setIsMapLoading(true);
+    }, [mapSrc]);
+
     const visiblePlayers = match.players.filter((player) => {
         if (player.isHuman && !showHumans) {
             return false;
@@ -67,80 +76,83 @@ export default function GameMap({
         >
             {/* Minimap */}
             <img
-                src={MAP_IMAGES[match.mapId]}
+                src={mapSrc}
                 alt={`${MAP_NAMES[match.mapId] ?? match.mapId} minimap`}
+                onLoad={() => setIsMapLoading(false)}
                 className="absolute inset-0 h-full w-full object-contain"
             />
 
             {/* Telemetry overlay */}
-            <svg
-                viewBox="0 0 1024 1024"
-                className="absolute inset-0 h-full w-full"
-                preserveAspectRatio="none"
-            >
-                <HeatmapOverlay
-                    match={match}
-                    mode={heatmapMode}
-                    visiblePlayerIds={visiblePlayerIds}
-                />
-                {/* Player paths */}
-                {visiblePlayers.map((player) => {
-                    const selected =
-                        selectedPlayerId === null ||
-                        selectedPlayerId === player.userId;
+            {!isMapLoading && (
+                <svg
+                    viewBox="0 0 1024 1024"
+                    className="absolute inset-0 h-full w-full"
+                    preserveAspectRatio="none"
+                >
+                    <HeatmapOverlay
+                        match={match}
+                        mode={heatmapMode}
+                        visiblePlayerIds={visiblePlayerIds}
+                    />
+                    {/* Player paths */}
+                    {visiblePlayers.map((player) => {
+                        const selected =
+                            selectedPlayerId === null ||
+                            selectedPlayerId === player.userId;
 
-                    return (
-                        <PlayerPath
-                            key={`path-${player.userId}`}
-                            player={player}
-                            currentTime={currentTime}
-                            selected={selected}
-                        />
-                    );
-                })}
-
-                {/* Player markers */}
-                {visiblePlayers.map((player) => {
-                    const selected =
-                        selectedPlayerId === null ||
-                        selectedPlayerId === player.userId;
-
-                    return (
-                        <PlayerMarker
-                            key={`marker-${player.userId}`}
-                            player={player}
-                            currentTime={currentTime}
-                            selected={selected}
-                        />
-                    );
-                })}
-
-                {/* Events */}
-                {visiblePlayers.flatMap((player) => {
-                    const selected =
-                        selectedPlayerId === null ||
-                        selectedPlayerId === player.userId;
-
-                    if (!selected) {
-                        return [];
-                    }
-
-                    return player.events
-                        .filter(
-                            (event) =>
-                                event.t <= currentTime &&
-                                event.mapX !== undefined &&
-                                event.mapY !== undefined &&
-                                enabledEvents[event.type]
-                        )
-                        .map((event, index) => (
-                            <EventMarker
-                                key={`${player.userId}-${event.type}-${index}`}
-                                event={event}
+                        return (
+                            <PlayerPath
+                                key={`path-${player.userId}`}
+                                player={player}
+                                currentTime={currentTime}
+                                selected={selected}
                             />
-                        ));
-                })}
-            </svg>
+                        );
+                    })}
+
+                    {/* Player markers */}
+                    {visiblePlayers.map((player) => {
+                        const selected =
+                            selectedPlayerId === null ||
+                            selectedPlayerId === player.userId;
+
+                        return (
+                            <PlayerMarker
+                                key={`marker-${player.userId}`}
+                                player={player}
+                                currentTime={currentTime}
+                                selected={selected}
+                            />
+                        );
+                    })}
+
+                    {/* Events */}
+                    {visiblePlayers.flatMap((player) => {
+                        const selected =
+                            selectedPlayerId === null ||
+                            selectedPlayerId === player.userId;
+
+                        if (!selected) {
+                            return [];
+                        }
+
+                        return player.events
+                            .filter(
+                                (event) =>
+                                    event.t <= currentTime &&
+                                    event.mapX !== undefined &&
+                                    event.mapY !== undefined &&
+                                    enabledEvents[event.type]
+                            )
+                            .map((event, index) => (
+                                <EventMarker
+                                    key={`${player.userId}-${event.type}-${index}`}
+                                    event={event}
+                                />
+                            ));
+                    })}
+                </svg>
+            )}
 
 
             {/* Map label */}
@@ -200,6 +212,16 @@ export default function GameMap({
                     ))}
                 </div>
             </div>
+            {isMapLoading && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-white" />
+                        <span className="text-xs text-zinc-400">
+                            Loading map…
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
 
     );
