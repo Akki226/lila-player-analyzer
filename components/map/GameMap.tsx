@@ -3,10 +3,12 @@
 import { MAP_IMAGES, MAP_NAMES } from "@/lib/maps";
 import type {
     EventVisibility,
+    HeatmapMode,
     Match,
 } from "@/lib/types";
 
 import EventMarker from "./EventMarker";
+import HeatmapOverlay from "./HeatmapOverlay";
 import PlayerMarker from "./PlayerMarker";
 import PlayerPath from "./PlayerPath";
 
@@ -17,6 +19,8 @@ type Props = {
     showHumans: boolean;
     showBots: boolean;
     enabledEvents: EventVisibility;
+    heatmapMode: HeatmapMode;
+    onHeatmapModeChange: (mode: HeatmapMode) => void;
 };
 
 export default function GameMap({
@@ -26,6 +30,8 @@ export default function GameMap({
     showHumans,
     showBots,
     enabledEvents,
+    heatmapMode,
+    onHeatmapModeChange,
 }: Props) {
     const visiblePlayers = match.players.filter((player) => {
         if (player.isHuman && !showHumans) {
@@ -38,6 +44,9 @@ export default function GameMap({
 
         return true;
     });
+    const visiblePlayerIds = new Set(
+        visiblePlayers.map((player) => player.userId)
+    );
 
     return (
         <div
@@ -69,6 +78,11 @@ export default function GameMap({
                 className="absolute inset-0 h-full w-full"
                 preserveAspectRatio="none"
             >
+                <HeatmapOverlay
+                    match={match}
+                    mode={heatmapMode}
+                    visiblePlayerIds={visiblePlayerIds}
+                />
                 {/* Player paths */}
                 {visiblePlayers.map((player) => {
                     const selected =
@@ -128,6 +142,7 @@ export default function GameMap({
                 })}
             </svg>
 
+
             {/* Map label */}
             <div className="absolute left-4 top-4 rounded-lg border border-zinc-700 bg-black/70 px-3 py-2 backdrop-blur">
                 <div className="text-sm font-medium">
@@ -155,6 +170,37 @@ export default function GameMap({
                     </div>
                 )}
             </div>
+            <div className="absolute right-4 top-4 rounded-lg border border-zinc-700 bg-black/75 p-1.5 backdrop-blur">
+                <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-zinc-500">
+                    Heatmap
+                </div>
+
+                <div className="flex gap-1">
+                    {(
+                        [
+                            ["off", "Off"],
+                            ["traffic", "Traffic"],
+                            ["kills", "Kills"],
+                            ["deaths", "Deaths"],
+                        ] as const
+                    ).map(([mode, label]) => (
+                        <button
+                            key={mode}
+                            type="button"
+                            onClick={() =>
+                                onHeatmapModeChange(mode)
+                            }
+                            className={`rounded px-2 py-1 text-[10px] transition ${heatmapMode === mode
+                                ? "bg-white text-black"
+                                : "text-zinc-400 hover:bg-white/10 hover:text-white"
+                                }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
+
     );
 }

@@ -36,6 +36,15 @@ MAP_CONFIG = {
     },
 }
 
+GAME_DATE_MAP = {
+    "February_10": "2026-02-10",
+    "February_11": "2026-02-11",
+    "February_12": "2026-02-12",
+    "February_13": "2026-02-13",
+    "February_14": "2026-02-14",
+}
+
+
 MOVEMENT_EVENTS = {
     "Position",
     "BotPosition",
@@ -70,6 +79,30 @@ def is_human(user_id):
     Bot IDs are short numeric IDs.
     """
     return "-" in str(user_id)
+
+
+def infer_game_date(file_path):
+    """
+    Extract the production gameplay date from the dataset folder.
+
+    Expected structure:
+
+        player_data/Feb10/*.nakama-0
+        player_data/Feb11/*.nakama-0
+        player_data/Feb12/*.nakama-0
+        player_data/Feb13/*.nakama-0
+        player_data/Feb14/*.nakama-0
+
+    We intentionally do not derive this from the Parquet timestamp because
+    the supplied ts field represents telemetry time rather than the
+    production calendar date.
+    """
+
+    for part in file_path.parts:
+        if part in GAME_DATE_MAP:
+            return GAME_DATE_MAP[part]
+
+    return None
 
 
 def world_to_minimap(x, z, map_id):
@@ -159,6 +192,9 @@ def load_gameplay_data():
             # Make sure timestamps are datetime.
             df["ts"] = pd.to_datetime(df["ts"])
 
+            # Preserve the production gameplay date from the source folder.
+            df["game_date"] = infer_game_date(file_path)
+
             frames.append(df)
 
         except Exception as error:
@@ -196,21 +232,28 @@ def build_match_times(data):
     """
     Calculate the first and last timestamp for each match.
 
+    Also preserve the production gameplay date from the source folder.
+
     Important:
-    Keep these as Pandas timestamps internally.
+    Keep timestamps as Pandas timestamps internally.
     We only convert them to ISO strings when writing JSON.
     """
 
     match_times = (
-        data.groupby("match_id")["ts"]
-        .agg(["min", "max"])
+        data.groupby("match_id")
+        .agg(
+            start=("ts", "min"),
+            end=("ts", "max"),
+            game_date=("game_date", "first"),
+        )
         .reset_index()
     )
 
     match_times = {
         row["match_id"]: {
-            "start": row["min"],
-            "end": row["max"],
+            "start": row["start"],
+            "end": row["end"],
+            "gameDate": row["game_date"],
         }
         for _, row in match_times.iterrows()
     }
@@ -249,6 +292,7 @@ def build_player_journeys(data, match_times):
 
         match_start = match_times[match_id]["start"]
         match_end = match_times[match_id]["end"]
+        game_date = match_times[match_id]["gameDate"]
 
         human = is_human(user_id)
 
@@ -260,6 +304,7 @@ def build_player_journeys(data, match_times):
             matches[match_id] = {
                 "matchId": match_id,
                 "mapId": map_id,
+                "gameDate": game_date,
 
                 # IMPORTANT:
                 # Keep these as Timestamp objects while processing.
@@ -288,6 +333,10 @@ def build_player_journeys(data, match_times):
                 matches[match_id]["endTime"],
                 matches[match_id]["startTime"],
             )
+
+            # Preserve the first valid gameplay date.
+            if not matches[match_id].get("gameDate"):
+                matches[match_id]["gameDate"] = game_date
 
         # ------------------------------------------------------------------
         # Build player object.
@@ -417,6 +466,7 @@ def build_match_index(matches):
             {
                 "matchId": match_id,
                 "mapId": match["mapId"],
+                "gameDate": match["gameDate"],
                 "startTime": match["startTime"].isoformat(),
                 "endTime": match["endTime"].isoformat(),
                 "durationMs": match["durationMs"],
@@ -428,7 +478,10 @@ def build_match_index(matches):
         )
 
     match_index.sort(
-        key=lambda match: match["startTime"]
+        key=lambda match: (
+            match["gameDate"] or "",
+            match["startTime"],
+        )
     )
 
     return match_index
@@ -536,9 +589,11 @@ def print_summary(matches, match_index):
     )
 
     maps = defaultdict(int)
+    dates = defaultdict(int)
 
     for match in matches.values():
         maps[match["mapId"]] += 1
+        dates[match["gameDate"]] += 1
 
     print()
     print(f"Matches:          {total_matches:,}")
@@ -553,6 +608,12 @@ def print_summary(matches, match_index):
 
     for map_id, count in sorted(maps.items()):
         print(f"  {map_id}: {count:,}")
+
+    print()
+    print("Matches by gameplay date:")
+
+    for game_date, count in sorted(dates.items()):
+        print(f"  {game_date}: {count:,}")
 
     if match_index:
         durations = [
@@ -571,6 +632,7 @@ def print_summary(matches, match_index):
     print()
     print(f"Output directory: {OUTPUT_DIR.resolve()}")
     print()
+
     print("Generated files:")
     print(f"  - {OUTPUT_DIR / 'matches.json'}")
     print(f"  - {OUTPUT_DIR / 'match_index.json'}")

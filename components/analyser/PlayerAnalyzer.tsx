@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadMatchData } from "@/lib/data";
 import type {
     EventVisibility,
+    HeatmapMode,
     Match,
     MatchIndexItem,
 } from "@/lib/types";
@@ -38,11 +39,20 @@ export default function PlayerAnalyzer() {
     const [enabledEvents, setEnabledEvents] =
         useState<EventVisibility>(DEFAULT_EVENTS);
 
+    const [heatmapMode, setHeatmapMode] =
+        useState<HeatmapMode>("off");
+
     const [currentTime, setCurrentTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [selectedMap, setSelectedMap] =
+        useState("all");
+
+    const [selectedDate, setSelectedDate] =
+        useState("all");
 
     /*
      * Load processed data.
@@ -145,6 +155,40 @@ export default function PlayerAnalyzer() {
         };
     }, [isPlaying, selectedMatch]);
 
+    useEffect(() => {
+        const filteredMatches = matchIndex.filter((match) => {
+            const matchesMap =
+                selectedMap === "all" ||
+                match.mapId === selectedMap;
+
+            const matchesDate =
+                selectedDate === "all" ||
+                match.gameDate === selectedDate;
+
+            return matchesMap && matchesDate;
+        });
+
+        if (filteredMatches.length === 0) {
+            setSelectedMatchId("");
+            return;
+        }
+
+        const currentStillVisible = filteredMatches.some(
+            (match) => match.matchId === selectedMatchId
+        );
+
+        if (!currentStillVisible) {
+            setSelectedMatchId(
+                filteredMatches[0].matchId
+            );
+        }
+    }, [
+        matchIndex,
+        selectedMap,
+        selectedDate,
+        selectedMatchId,
+    ]);
+
     function handleMatchChange(matchId: string) {
         setSelectedMatchId(matchId);
     }
@@ -232,7 +276,11 @@ export default function PlayerAnalyzer() {
                     <MatchSelector
                         matches={matchIndex}
                         selectedMatchId={selectedMatchId}
+                        selectedMap={selectedMap}
+                        selectedDate={selectedDate}
                         onChange={handleMatchChange}
+                        onMapChange={setSelectedMap}
+                        onDateChange={setSelectedDate}
                     />
                 </div>
             </header>
@@ -270,6 +318,8 @@ export default function PlayerAnalyzer() {
                                 showHumans={showHumans}
                                 showBots={showBots}
                                 enabledEvents={enabledEvents}
+                                heatmapMode={heatmapMode}
+                                onHeatmapModeChange={setHeatmapMode}
                             />
                         </div>
                     </div>

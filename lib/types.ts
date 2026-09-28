@@ -27,6 +27,7 @@ export type Player = {
 export type Match = {
     matchId: string;
     mapId: string;
+    gameDate: string;
     startTime: string;
     endTime: string;
     durationMs: number;
@@ -37,6 +38,7 @@ export type Match = {
 export type MatchIndexItem = {
     matchId: string;
     mapId: string;
+    gameDate: string;
     startTime: string;
     endTime: string;
     durationMs: number;
@@ -47,3 +49,10 @@ export type MatchIndexItem = {
 };
 
 export type EventVisibility = Record<string, boolean>;
+
+export type HeatmapMode =
+    | "off"
+    | "traffic"
+    | "kills"
+    | "deaths";
+
