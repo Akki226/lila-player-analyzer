@@ -43,7 +43,7 @@ Next.js application
        ├── Player paths
        ├── Event markers
        └── Heatmap overlays
-
+```
 
 `match_index.json` contains lightweight metadata used for match selection and filtering.
 
