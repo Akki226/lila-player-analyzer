@@ -18,6 +18,7 @@ Next.js was chosen because the final product is an interactive browser-based vis
 
 ## Data Flow
 
+```text
 Raw Parquet files
        │
        ▼
