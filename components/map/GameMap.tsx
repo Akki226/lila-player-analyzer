@@ -6,8 +6,8 @@ import type {
     HeatmapMode,
     Match,
 } from "@/lib/types";
+import { useState } from "react";
 
-import { useEffect, useState } from "react";
 import EventMarker from "./EventMarker";
 import HeatmapOverlay from "./HeatmapOverlay";
 import PlayerMarker from "./PlayerMarker";
@@ -34,13 +34,10 @@ export default function GameMap({
     heatmapMode,
     onHeatmapModeChange,
 }: Props) {
-
     const mapSrc = MAP_IMAGES[match.mapId];
-    const [isMapLoading, setIsMapLoading] = useState(true);
+    const [loadedMapSrc, setLoadedMapSrc] = useState<string | null>(null);
 
-    useEffect(() => {
-        setIsMapLoading(true);
-    }, [mapSrc]);
+    const isMapLoading = loadedMapSrc !== mapSrc;
 
     const visiblePlayers = match.players.filter((player) => {
         if (player.isHuman && !showHumans) {
@@ -53,6 +50,7 @@ export default function GameMap({
 
         return true;
     });
+
     const visiblePlayerIds = new Set(
         visiblePlayers.map((player) => player.userId)
     );
@@ -76,9 +74,10 @@ export default function GameMap({
         >
             {/* Minimap */}
             <img
+                key={mapSrc}
                 src={mapSrc}
                 alt={`${MAP_NAMES[match.mapId] ?? match.mapId} minimap`}
-                onLoad={() => setIsMapLoading(false)}
+                onLoad={() => setLoadedMapSrc(mapSrc)}
                 className="absolute inset-0 h-full w-full object-contain"
             />
 
@@ -94,6 +93,7 @@ export default function GameMap({
                         mode={heatmapMode}
                         visiblePlayerIds={visiblePlayerIds}
                     />
+
                     {/* Player paths */}
                     {visiblePlayers.map((player) => {
                         const selected =
@@ -154,7 +154,6 @@ export default function GameMap({
                 </svg>
             )}
 
-
             {/* Map label */}
             <div className="absolute left-4 top-4 rounded-lg border border-zinc-700 bg-black/70 px-3 py-2 backdrop-blur">
                 <div className="text-sm font-medium">
@@ -163,6 +162,36 @@ export default function GameMap({
 
                 <div className="mt-1 text-[11px] text-zinc-400">
                     {visiblePlayers.length} visible players
+                </div>
+            </div>
+
+            {/* Heatmap controls */}
+            <div className="absolute right-4 top-4 rounded-lg border border-zinc-700 bg-black/75 p-1.5 backdrop-blur">
+                <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-zinc-500">
+                    Heatmap
+                </div>
+
+                <div className="flex gap-1">
+                    {(
+                        [
+                            ["off", "Off"],
+                            ["traffic", "Traffic"],
+                            ["kills", "Kills"],
+                            ["deaths", "Deaths"],
+                        ] as const
+                    ).map(([mode, label]) => (
+                        <button
+                            key={mode}
+                            type="button"
+                            onClick={() => onHeatmapModeChange(mode)}
+                            className={`rounded px-2 py-1 text-[10px] transition ${heatmapMode === mode
+                                ? "bg-white text-black"
+                                : "text-zinc-400 hover:bg-white/10 hover:text-white"
+                                }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -182,40 +211,13 @@ export default function GameMap({
                     </div>
                 )}
             </div>
-            <div className="absolute right-4 top-4 rounded-lg border border-zinc-700 bg-black/75 p-1.5 backdrop-blur">
-                <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-zinc-500">
-                    Heatmap
-                </div>
 
-                <div className="flex gap-1">
-                    {(
-                        [
-                            ["off", "Off"],
-                            ["traffic", "Traffic"],
-                            ["kills", "Kills"],
-                            ["deaths", "Deaths"],
-                        ] as const
-                    ).map(([mode, label]) => (
-                        <button
-                            key={mode}
-                            type="button"
-                            onClick={() =>
-                                onHeatmapModeChange(mode)
-                            }
-                            className={`rounded px-2 py-1 text-[10px] transition ${heatmapMode === mode
-                                ? "bg-white text-black"
-                                : "text-zinc-400 hover:bg-white/10 hover:text-white"
-                                }`}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* Map loading overlay */}
             {isMapLoading && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-3">
                         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-white" />
+
                         <span className="text-xs text-zinc-400">
                             Loading map…
                         </span>
@@ -223,6 +225,5 @@ export default function GameMap({
                 </div>
             )}
         </div>
-
     );
 }
